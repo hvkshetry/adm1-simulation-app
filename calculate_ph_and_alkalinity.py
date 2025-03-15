@@ -1,4 +1,5 @@
-"""Utility script to calculate pH and alkalinity from ADM1 state variables
+"""
+Utility script to calculate pH and alkalinity from ADM1 state variables
 
 This script provides functions to calculate pH and alkalinity based on the acid-base equilibria
 of components in the ADM1 model. It uses the same algorithms as the ADM1 model itself.

@@ -1,4 +1,5 @@
-"""Revised utility script to calculate pH and alkalinity from ADM1 state variables
+"""
+Revised utility script to calculate pH and alkalinity from ADM1 state variables
 
 This implementation addresses issues with the previous version by directly accessing
 component concentrations by ID rather than using array indices.

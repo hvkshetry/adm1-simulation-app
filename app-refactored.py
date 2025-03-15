@@ -1,4 +1,5 @@
-"""ADM1 Simulation Application
+"""
+ADM1 Simulation Application
 
 This is the main entry point for the ADM1 simulation application.
 It includes a patch for QSDsan's WasteStream class to fix the TSS calculation
