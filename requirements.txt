@@ -19,10 +19,6 @@ scipy>=1.8.0
 python-dotenv>=0.19.0
 google-generativeai>=0.3.0
 
-# Data handling and file operations
-io>=0.0.0
-base64>=0.0.0
-
 # Optional: For development and testing
 pytest>=7.0.0
 pytest-cov>=2.12.0
