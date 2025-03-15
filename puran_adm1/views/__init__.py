@@ -1,1 +1,3 @@
-# Initialize views package
+"""
+View modules for the Puran ADM1 Simulation Package
+"""

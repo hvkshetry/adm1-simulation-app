@@ -1,4 +1,5 @@
-"""Main view for the Streamlit application
+"""
+Main view for the Streamlit application
 """
 import streamlit as st
 from puran_adm1.components.sidebar import render_sidebar

@@ -1,4 +1,5 @@
-"""Puran ADM1 Simulation Package
+"""
+Puran ADM1 Simulation Package
 
 This package contains the code for running ADM1 simulations for anaerobic digestion modeling.
 """

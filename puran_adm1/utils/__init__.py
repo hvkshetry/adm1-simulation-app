@@ -1,1 +1,3 @@
-# Initialize utils package
+"""
+Utility functions for the Puran ADM1 Simulation Package
+"""

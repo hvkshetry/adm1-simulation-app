@@ -1,122 +1,105 @@
-"""Styling utilities for the Streamlit application.
-
-This module provides functions for setting page styling, displaying branding elements,
-and other visual customizations.
+"""
+Styling utilities for the Streamlit application
 """
 import streamlit as st
 import base64
-import os
+from io import BytesIO
+
+def get_base64_of_bin_file(bin_file):
+    """
+    Load binary file and encode in base64
+    """
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
 def set_page_styling():
     """
-    Set custom CSS styles for the application
+    Set custom CSS styling according to Puran Water brand guidelines
     """
-    # Define custom CSS
-    st.markdown("""
-    <style>
-        .main .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-            color: #004080;
-        }
-        
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            background-color: #f0f0f0;
-            border-radius: 4px 4px 0 0;
-            border: 1px solid #ddd;
-            border-bottom: none;
-            padding: 0.5rem 1rem;
-        }
-        
-        .stTabs [aria-selected="true"] {
-            background-color: #004080;
-            color: white;
-        }
-        
-        .sidebar .sidebar-content {
-            background-image: linear-gradient(#f0f8ff, #e0f0ff);
-        }
-        
-        div[data-testid="stExpander"] div[role="button"] p {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        
-        div[data-testid="stDataFrame"] {
+    primary_blue = "#40a4df"
+    secondary_slate = "#708090"
+    
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background-color: white;
+        }}
+        h1, h2, h3 {{
+            color: {primary_blue};
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-weight: bold;
+        }}
+        .st-emotion-cache-16txtl3 h1 {{
+            margin-top: -3rem;
+        }}
+        .footer {{
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: white;
+            color: {secondary_slate};
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            border-top: 1px solid #f0f0f0;
+        }}
+        .branding-bar {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: white;
             margin-bottom: 1rem;
-        }
-        
-        section[data-testid="stSidebar"] > div > div:nth-child(1) > div > div > div > button {
-            background-color: #004080;
-            color: white;
-        }
-    </style>
+        }}
+        .powered-by {{
+            font-size: 12px;
+            color: {secondary_slate};
+            text-align: right;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+        .powered-by img {{
+            height: 30px;
+        }}
+        .sidebar-header {{
+            color: {primary_blue};
+            font-weight: bold;
+            margin-top: 15px;
+        }}
+        </style>
     """, unsafe_allow_html=True)
 
 def display_branding_header():
     """
-    Display branding header with logo and title
+    Display the Puran Water and QSDsan branding header
     """
-    # Check if custom logos are available in the repository
-    logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-                            "puran_water_logo.png")
-    qsdsan_logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                                  "qsdsan_logo.png")
-    
-    # Create columns for logos and title
-    col1, col2, col3 = st.columns([1, 3, 1])
-    
-    # Display Puran Water logo if available
-    if os.path.exists(logo_path):
-        with col1:
-            st.image(logo_path, width=150)
-    else:
-        # If logo is not available, display a placeholder or text
-        with col1:
-            st.markdown("## Puran Water")
-    
-    # Display QSDsan logo if available
-    if os.path.exists(qsdsan_logo_path):
-        with col3:
-            st.image(qsdsan_logo_path, width=150)
-    
-    # Add a separator
-    st.markdown("<hr>", unsafe_allow_html=True)
+    col1, col2 = st.columns([6, 6])
+    with col1:
+        try:
+            st.image("puran_water_logo.png", width=250)
+        except:
+            st.write("Puran Water Logo Here")
+    with col2:
+        try:
+            qsdsan_b64 = get_base64_of_bin_file("qsdsan_logo.png")
+            st.markdown(f"""
+                <div class="powered-by">
+                    Powered by: <img src="data:image/png;base64,{qsdsan_b64}" alt="QSDsan">
+                </div>
+            """, unsafe_allow_html=True)
+        except:
+            st.write("Powered by QSDsan")
 
 def display_footer():
     """
-    Display footer with copyright and version information
+    Display the footer with copyright and contact information
     """
-    st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("""
-    <div style="text-align: center; color: #666; font-size: 0.8rem;">
-        <p>Developed using QSDsan and EXPOsan packages | ADM1 Simulation App v0.1.0</p>
-        <p>&copy; 2025 Puran Water | <a href="https://github.com/hvkshetry/adm1-simulation-app" target="_blank">GitHub Repository</a></p>
-    </div>
+        <div class="footer">
+            © 2025 Puran Water LLC. All rights reserved.
+            For engineering consulting services, contact us at hersh@puranwater.com.
+        </div>
     """, unsafe_allow_html=True)
-
-def get_binary_file_downloader_html(bin_file, file_label='File'):
-    """
-    Create a download link for a binary file
-    
-    Parameters
-    ----------
-    bin_file : bytes
-        Binary file data
-    file_label : str
-        Label for the download link
-        
-    Returns
-    -------
-    str
-        HTML for the download link
-    """
-    b64 = base64.b64encode(bin_file).decode()
-    return f'<a href="data:application/octet-stream;base64,{b64}" download="{file_label}">Download {file_label}</a>'

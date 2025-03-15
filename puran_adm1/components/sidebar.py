@@ -1,235 +1,176 @@
-"""Sidebar component for the Streamlit application.
-
-This module renders the sidebar with parameter controls and run buttons.
+"""
+Sidebar component for the Streamlit application
 """
 import streamlit as st
-import numpy as np
-from puran_adm1.models.adm1_simulation import run_simulation
-from puran_adm1.api.ai_assistant import get_ai_recommendations
+from puran_adm1.api.gemini import GeminiClient
 
-def render_sidebar(state):
+def render_sidebar(session_state):
     """
-    Render the sidebar with simulation parameters and run buttons
+    Render the sidebar for the application
     
     Parameters
     ----------
-    state : streamlit.session_state
-        The application's session state
-        
-    Returns
-    -------
-    bool
-        True if simulations were run, False otherwise
+    session_state : streamlit.session_state
+        Streamlit session state
     """
     with st.sidebar:
-        st.title("Simulation Controls")
+        st.header("Feedstock & Simulation Setup")
         
-        # AI Assistant
-        st.header("AI Feedstock Assistant")
-        ai_description = st.text_area(
-            "Describe your feedstock in plain language",
-            "Food waste consisting of 30% carbohydrates, 15% proteins, and 10% lipids.",
-            help="Describe your feedstock composition and characteristics in natural language"
+        # --- AI Assistant Mode Selection ---
+        st.subheader("AI Assistant Mode")
+        mode = st.radio(
+            "Choose what the AI should provide:",
+            ("Feedstock State Variables Only", "Feedstock + Reaction Kinetics"),
+            index=0
         )
-        
-        use_kinetics = st.checkbox(
-            "Include kinetic parameters in recommendations",
-            value=state.use_kinetics,
-            help="Get kinetic parameter recommendations in addition to feedstock composition"
+        # This bool will decide if we ask for kinetics or not
+        session_state.use_kinetics = (mode == "Feedstock + Reaction Kinetics")
+
+        # --- AI Assistant for feedstock (and possibly kinetics) ---
+        st.subheader("AI Feedstock Assistant")
+        feedstock_description = st.text_area(
+            "Describe your feedstock in natural language:",
+            placeholder="Example: Food waste with ~40% carbs, ~20% proteins, ~10% lipids, etc."
         )
-        
-        if use_kinetics != state.use_kinetics:
-            state.use_kinetics = use_kinetics
-        
         if st.button("Get AI Recommendations"):
             with st.spinner("Getting AI recommendations..."):
-                try:
-                    recommendations = get_ai_recommendations(ai_description, use_kinetics)
-                    if 'influent_values' in recommendations:
-                        state.influent_values = recommendations['influent_values']
-                    if 'influent_explanations' in recommendations:
-                        state.influent_explanations = recommendations['influent_explanations']
-                    if use_kinetics and 'kinetic_params' in recommendations:
-                        state.kinetic_params = recommendations['kinetic_params']
-                    if use_kinetics and 'kinetic_explanations' in recommendations:
-                        state.kinetic_explanations = recommendations['kinetic_explanations']
-                    state.ai_recommendations = recommendations  # Store the full response
-                    st.success("Recommendations applied!")
-                except Exception as e:
-                    st.error(f"Error getting AI recommendations: {str(e)}")
-        
-        # Common Settings
-        st.header("Common Settings")
-        
-        # Influent flow rate (same for all three simulations)
-        state.Q = st.number_input(
-            "Influent Flow (m³/d)",
-            min_value=10.0,
-            max_value=1000.0,
-            value=state.Q,
-            step=10.0,
-            help="Flow rate of the influent stream"
-        )
-        
-        # Simulation parameters for each simulation
-        st.header("Simulation Parameters")
-        
-        # Simulation 1 parameters
-        with st.expander("Simulation 1", expanded=True):
-            state.sim_params[0]['Temp'] = st.number_input(
-                "Temperature (K) - Sim 1",
-                min_value=273.15,
-                max_value=373.15,
-                value=state.sim_params[0]['Temp'],
-                step=1.0,
-                help="Operating temperature for the digester"
-            )
-            state.sim_params[0]['HRT'] = st.number_input(
-                "HRT (days) - Sim 1",
-                min_value=1.0,
-                max_value=100.0,
-                value=state.sim_params[0]['HRT'],
-                step=1.0,
-                help="Hydraulic Retention Time"
-            )
-            state.sim_params[0]['method'] = st.selectbox(
-                "Integration Method - Sim 1",
-                ["BDF", "RK45", "RK23", "DOP853", "Radau", "LSODA"],
-                index=0,
-                help="Numerical integration method (BDF is best for stiff systems)"
-            )
-        
-        # Simulation 2 parameters
-        with st.expander("Simulation 2", expanded=True):
-            state.sim_params[1]['Temp'] = st.number_input(
-                "Temperature (K) - Sim 2",
-                min_value=273.15,
-                max_value=373.15,
-                value=state.sim_params[1]['Temp'],
-                step=1.0
-            )
-            state.sim_params[1]['HRT'] = st.number_input(
-                "HRT (days) - Sim 2",
-                min_value=1.0,
-                max_value=100.0,
-                value=state.sim_params[1]['HRT'],
-                step=1.0
-            )
-            state.sim_params[1]['method'] = st.selectbox(
-                "Integration Method - Sim 2",
-                ["BDF", "RK45", "RK23", "DOP853", "Radau", "LSODA"],
-                index=0
-            )
-        
-        # Simulation 3 parameters
-        with st.expander("Simulation 3", expanded=True):
-            state.sim_params[2]['Temp'] = st.number_input(
-                "Temperature (K) - Sim 3",
-                min_value=273.15,
-                max_value=373.15,
-                value=state.sim_params[2]['Temp'],
-                step=1.0
-            )
-            state.sim_params[2]['HRT'] = st.number_input(
-                "HRT (days) - Sim 3",
-                min_value=1.0,
-                max_value=100.0,
-                value=state.sim_params[2]['HRT'],
-                step=1.0
-            )
-            state.sim_params[2]['method'] = st.selectbox(
-                "Integration Method - Sim 3",
-                ["BDF", "RK45", "RK23", "DOP853", "Radau", "LSODA"],
-                index=0
-            )
-        
-        # Simulation time settings
-        st.header("Simulation Time")
-        
-        state.simulation_time = st.number_input(
-            "Duration (days)",
-            min_value=10.0,
-            max_value=500.0,
-            value=state.simulation_time,
-            step=10.0,
-            help="Total simulation duration"
-        )
-        
-        state.t_step = st.number_input(
-            "Time Step (days)",
-            min_value=0.01,
-            max_value=1.0,
-            value=state.t_step,
-            step=0.01,
-            help="Time step for numerical integration"
-        )
-        
-        # Run button
-        st.header("Run Simulations")
-        
-        run_button = st.button("Run All Simulations", use_container_width=True)
-        
-        if run_button:
-            sims_run = run_all_simulations(state)
-            st.success("Simulations complete!")
-            return sims_run
-    
-    return False
+                # Initialize the Gemini client
+                gemini_client = GeminiClient()
+                
+                # Get recommendations
+                response = gemini_client.get_adm1_recommendations(
+                    feedstock_description,
+                    include_kinetics=session_state.use_kinetics
+                )
+                
+                if response:
+                    session_state.ai_recommendations = response
+                    # Parse the JSON
+                    try:
+                        (fv, fe, kv, ke) = gemini_client.parse_recommendations(
+                            response,
+                            include_kinetics=session_state.use_kinetics
+                        )
+                        
+                        # Update session state
+                        if fv:
+                            session_state.influent_values.update(fv)
+                        if fe:
+                            session_state.influent_explanations.update(fe)
+                        
+                        # If user only wants feedstock, do not update or store kinetic data
+                        if session_state.use_kinetics and kv:
+                            session_state.kinetic_params.update(kv)
+                        if session_state.use_kinetics and ke:
+                            session_state.kinetic_explanations.update(ke)
+                        
+                        st.success("AI recommendations parsed and stored successfully!")
+                    except Exception as e:
+                        st.error(f"Error parsing recommendations: {e}")
 
-def run_all_simulations(state):
+        # --- Common Influent Flow ---
+        st.subheader("Common Influent Flow")
+        Q_new = st.number_input(
+            "Influent Flow Rate (m³/d)",
+            min_value=1.0,
+            value=float(session_state.Q),
+            step=1.0
+        )
+        if Q_new != session_state.Q:
+            session_state.Q = Q_new
+
+        # --- Reactor & Integration Parameters (Three Simulations) ---
+        st.subheader("Parameters for Each Simulation")
+        for i in range(3):
+            st.markdown(f"**Simulation {i+1}**")
+            temp_val = st.number_input(
+                f"Temperature (K) for Sim {i+1}",
+                min_value=273.15,
+                value=float(session_state.sim_params[i]['Temp']),
+                step=0.1,
+                key=f"temp_sim_{i}"
+            )
+            hrt_val = st.number_input(
+                f"HRT (days) for Sim {i+1}",
+                min_value=1.0,
+                value=float(session_state.sim_params[i]['HRT']),
+                step=1.0,
+                key=f"hrt_sim_{i}"
+            )
+            method_val = st.selectbox(
+                f"Integration Method for Sim {i+1}",
+                ["BDF","RK45","RK23","DOP853","Radau","LSODA"],
+                index=["BDF","RK45","RK23","DOP853","Radau","LSODA"].index(
+                    session_state.sim_params[i]['method']
+                ),
+                key=f"method_sim_{i}"
+            )
+            session_state.sim_params[i]['Temp'] = temp_val
+            session_state.sim_params[i]['HRT'] = hrt_val
+            session_state.sim_params[i]['method'] = method_val
+        
+        # --- Simulation time and step
+        st.subheader("Simulation Time & Step")
+        sim_time = st.slider(
+            "Simulation Time (days)",
+            10.0, 300.0,
+            session_state.simulation_time,
+            step=5.0
+        )
+        t_step = st.slider(
+            "Time Step (days)",
+            0.01, 1.0,
+            session_state.t_step,
+            step=0.01
+        )
+        session_state.simulation_time = sim_time
+        session_state.t_step = t_step
+        
+        return _render_run_button(session_state)
+
+def _render_run_button(session_state):
     """
-    Run all three simulations with the current parameters
+    Render the "Run All Simulations" button and handle running the simulations
     
     Parameters
     ----------
-    state : streamlit.session_state
-        The application's session state
+    session_state : streamlit.session_state
+        Streamlit session state
         
     Returns
     -------
     bool
-        True if all simulations were run successfully, False otherwise
+        Whether the simulations were run successfully
     """
-    # Clear previous results
-    state.sim_results = [None, None, None]
+    from puran_adm1.models.adm1_simulation import create_influent_stream, run_simulation
     
-    progress_bar = st.sidebar.progress(0)
-    status_text = st.sidebar.empty()
-    
-    try:
-        for i in range(3):
-            # Update progress
-            progress = (i / 3) * 100
-            progress_bar.progress(int(progress))
-            status_text.text(f"Running simulation {i+1}/3...")
+    if st.button("Run All Simulations"):
+        try:
+            with st.spinner("Creating influent stream..."):
+                common_inf = create_influent_stream(
+                    Q=session_state.Q,
+                    Temp=session_state.sim_params[0]['Temp'],
+                    concentrations=session_state.influent_values
+                )
             
-            # Run simulation
-            result = run_simulation(
-                Q=state.Q,
-                Temp=state.sim_params[i]['Temp'],
-                HRT=state.sim_params[i]['HRT'],
-                concentrations=state.influent_values,
-                kinetic_params=state.kinetic_params if state.use_kinetics else {},
-                simulation_time=state.simulation_time,
-                t_step=state.t_step,
-                method=state.sim_params[i]['method'],
-                use_kinetics=state.use_kinetics
-            )
-            
-            # Store result
-            state.sim_results[i] = result
-        
-        # Update progress to 100%
-        progress_bar.progress(100)
-        status_text.text("All simulations complete!")
-        
-        return True
-    
-    except Exception as e:
-        st.sidebar.error(f"Error running simulations: {str(e)}")
-        return False
-    
-    finally:
-        # Clean up progress indicators
-        progress_bar.empty()
-        status_text.empty()
+            # Run each sim
+            for i in range(3):
+                with st.spinner(f"Running Simulation {i+1}..."):
+                    sys_i, inf_i, eff_i, gas_i = run_simulation(
+                        Q=session_state.Q,
+                        Temp=session_state.sim_params[i]['Temp'],
+                        HRT=session_state.sim_params[i]['HRT'],
+                        concentrations=session_state.influent_values,
+                        kinetic_params=session_state.kinetic_params,
+                        simulation_time=session_state.simulation_time,
+                        t_step=session_state.t_step,
+                        method=session_state.sim_params[i]['method'],
+                        use_kinetics=session_state.use_kinetics
+                    )
+                    session_state.sim_results[i] = (sys_i, inf_i, eff_i, gas_i)
+            st.success("All simulations completed successfully!")
+            return True
+        except Exception as e:
+            st.error(f"Error running simulations: {e}")
+            return False
+    return False
