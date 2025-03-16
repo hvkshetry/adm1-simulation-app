@@ -5,7 +5,8 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from puran_adm1.models.adm1_simulation import calculate_biomass_yields, calculate_effluent_COD
+from puran_adm1.models.adm1_simulation import calculate_biomass_yields, calculate_effluent_COD, calculate_gas_properties
+from puran_adm1.components.export.pdf_export_enhanced import render_pdf_export_button
 
 def render_simulation_plots(session_state):
     """
@@ -214,7 +215,7 @@ def render_export_buttons(session_state, fig=None):
         The plotly figure to export, by default None
     """
     # Export buttons
-    c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
     
     # Export plot button
     with c1:
@@ -282,3 +283,8 @@ def render_export_buttons(session_state, fig=None):
                 )
             else:
                 st.warning("No data available to export.")
+    
+    # Comprehensive PDF export button
+    with c3:
+        # Render the PDF export button for comprehensive simulation report
+        render_pdf_export_button(session_state)
