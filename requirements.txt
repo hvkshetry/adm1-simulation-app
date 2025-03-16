@@ -1,24 +1,10 @@
-# Core dependencies
 streamlit>=1.27.0
 pandas>=2.0.0
 numpy>=1.22.0
 matplotlib>=3.6.0
 plotly>=5.13.0
-
-# QSDsan and related packages
 qsdsan>=1.1.0
 exposan>=0.1.0
 chemicals>=1.0.0
-biosteam>=2.24.4
-thermosteam>=0.35.0
-
-# Scientific computing
-scipy>=1.8.0
-
-# Environment and API integration
 python-dotenv>=0.19.0
 google-generativeai>=0.3.0
-
-# Optional: For development and testing
-pytest>=7.0.0
-pytest-cov>=2.12.0
